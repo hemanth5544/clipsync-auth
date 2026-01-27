@@ -65,6 +65,27 @@ const getBaseURL = (): string => {
          "http://localhost:3001";
 };
 
+// Get trusted origins for Better-Auth CORS/CSRF protection
+const getTrustedOrigins = (): string[] => {
+  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || "";
+  
+  if (!allowedOriginsEnv) {
+    return [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+      "http://127.0.0.1:3002",
+    ];
+  }
+
+  return allowedOriginsEnv
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(origin => origin.length > 0);
+};
+
 export const auth = betterAuth({
   database: prismaAdapter(getPrisma(), {
     provider: "postgresql",
@@ -72,6 +93,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL: getBaseURL(),
   basePath: "/api/auth",
+  trustedOrigins: getTrustedOrigins(),
   emailAndPassword: {
     enabled: true,
   },
