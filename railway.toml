@@ -1,0 +1,27 @@
+# Railway Configuration for ClipSync Auth Service (Standalone)
+# This is a standalone authentication service repository
+#
+# REQUIRED Environment Variables (set in Railway Dashboard → Variables):
+# 1. DATABASE_URL - PostgreSQL connection string
+# 2. BETTER_AUTH_SECRET - Secret key for Better-Auth
+# 3. JWT_SECRET - Secret key for JWT tokens
+# 4. BETTER_AUTH_BASE_URL - Public URL of this auth service
+# 5. ALLOWED_ORIGINS - Comma-separated list of allowed CORS origins
+#
+# Optional (for OAuth):
+# - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# - GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+#
+# In Railway Dashboard:
+# 1. Settings → Source → Root Directory: Leave EMPTY (repo root)
+# 2. Settings → Build → Builder: "Dockerfile"
+
+# Use Dockerfile for build
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Start command is in Dockerfile: "node server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
