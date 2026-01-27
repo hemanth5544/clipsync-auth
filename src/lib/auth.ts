@@ -90,6 +90,18 @@ const getBaseURL = (): string => {
          "http://localhost:3001";
 };
 
+
+const getTrustedOrigins = (): string[] => {
+  const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
+  if (allowedOrigins) {
+    return allowedOrigins
+      .split(",")
+      .map(origin => origin.trim())
+      .filter(origin => origin.length > 0);
+  }
+  return ["http://localhost:3000", "http://localhost:3001"];
+};
+
 export const auth = betterAuth({
   database: prismaAdapter(getPrisma(), {
     provider: "postgresql",
@@ -97,9 +109,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL: getBaseURL(),
   basePath: "/api/auth",
-  // Allow all origins using wildcard pattern
-  // Better-auth supports wildcards: * matches any characters
-  trustedOrigins: ["*"],
+  trustedOrigins: getTrustedOrigins(), // Add this line
   emailAndPassword: {
     enabled: true,
   },
