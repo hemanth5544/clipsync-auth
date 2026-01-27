@@ -1,0 +1,27 @@
+# Nixpacks Configuration for ClipSync Auth Service
+# Railway will use this instead of Dockerfile
+
+[phases.setup]
+nixPkgs = ["nodejs_18", "pnpm", "python3", "openssl", "make", "gcc"]
+
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@8.15.0 --activate",
+  "pnpm install --frozen-lockfile || pnpm install"
+]
+
+[phases.build]
+cmds = [
+  "mkdir -p public",
+  "pnpm prisma:generate",
+  "SKIP_ENV_VALIDATION=true pnpm build"
+]
+
+# Next.js standalone mode: server.js is in .next/standalone/
+# We need to run from project root so static files and public are accessible
+[start]
+cmd = "cd .next/standalone && PORT=${PORT:-3001} HOSTNAME=0.0.0.0 node server.js"
+
+[providers]
+node = "18"

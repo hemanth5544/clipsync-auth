@@ -58,6 +58,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 ENV NODE_ENV=production
+# Set HOSTNAME to 0.0.0.0 so Next.js binds to all interfaces (required for Railway)
+ENV HOSTNAME=0.0.0.0
+# Default PORT (Railway will override this with its own PORT env var)
+ENV PORT=3001
 
 # Copy the standalone output from builder
 # Next.js standalone includes all dependencies and server.js
@@ -66,8 +70,12 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy public directory (will be empty if no public files exist)
 COPY --from=builder /app/public ./public
 
+# Copy startup script
+COPY start-server.js ./
+
 # Expose port (Railway will set PORT env var)
 EXPOSE 3001
 
-# Start the Next.js server
-CMD ["node", "server.js"]
+# Start the Next.js server using our startup script
+# This ensures it binds to 0.0.0.0 and uses Railway's PORT
+CMD ["node", "start-server.js"]
