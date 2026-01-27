@@ -41,6 +41,9 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 # Generate Prisma client
 RUN pnpm prisma:generate
 
+# Ensure public directory exists (create empty if it doesn't)
+RUN mkdir -p /app/public
+
 # Build Next.js app
 RUN pnpm build
 
@@ -60,6 +63,7 @@ ENV NODE_ENV=production
 # Next.js standalone includes all dependencies and server.js
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# Copy public directory (will be empty if no public files exist)
 COPY --from=builder /app/public ./public
 
 # Expose port (Railway will set PORT env var)
