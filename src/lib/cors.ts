@@ -22,19 +22,13 @@ function getAllowedOrigins(): string[] {
 }
 
 export function addCorsHeaders(response: NextResponse, origin?: string | null): NextResponse {
-  const allowedOrigins = getAllowedOrigins();
-
-  if (origin && allowedOrigins.includes(origin)) {
+  // Allow all origins for now - echo back the origin if provided
+  // Note: We can't use * with credentials, so we echo back the origin
+  if (origin) {
     response.headers.set("Access-Control-Allow-Origin", origin);
-  } else if (origin) {
-  
-    if (allowedOrigins.length > 0) {
-      response.headers.set("Access-Control-Allow-Origin", allowedOrigins[0]);
-    }
   } else {
-    if (allowedOrigins.length > 0) {
-      response.headers.set("Access-Control-Allow-Origin", allowedOrigins[0]);
-    }
+    // If no origin header, allow all (though this is rare)
+    response.headers.set("Access-Control-Allow-Origin", "*");
   }
 
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
