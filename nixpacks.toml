@@ -19,9 +19,9 @@ cmds = [
 ]
 
 # Next.js standalone mode: server.js is in .next/standalone/
-# We need to run from project root so static files and public are accessible
+# Railway sets PORT automatically, we just need to bind to 0.0.0.0
 [start]
-cmd = "cd .next/standalone && PORT=${PORT:-3001} HOSTNAME=0.0.0.0 node server.js"
+cmd = "cd .next/standalone && HOSTNAME=0.0.0.0 node server.js"
 
 [providers]
 node = "18"

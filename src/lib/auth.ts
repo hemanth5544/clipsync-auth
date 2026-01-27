@@ -41,19 +41,44 @@ const getPrisma = (): PrismaClient => {
       process.env.DATABASE_URL = dbUrl;
     }
     
+    // Use the connection URL directly (should include SSL params for Neon)
+    const connectionUrl = process.env.DATABASE_URL || dbUrl;
+    
+    // For Neon and other cloud databases, ensure SSL is enabled
+    // Neon connection strings usually include ?sslmode=require
+    // If not present, add it
+    let finalUrl = connectionUrl;
+    if (connectionUrl.includes('neon.tech') || connectionUrl.includes('neon.tech')) {
+      if (!connectionUrl.includes('sslmode=')) {
+        finalUrl = connectionUrl.includes('?') 
+          ? `${connectionUrl}&sslmode=require`
+          : `${connectionUrl}?sslmode=require`;
+      }
+    }
+    
+    console.log('Initializing Prisma Client...');
+    console.log('Database host:', finalUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
+    
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
       errorFormat: "pretty",
       datasources: {
         db: {
-          url: process.env.DATABASE_URL || dbUrl,
+          url: finalUrl,
         },
       },
     });
     
-    prisma.$connect().catch((error) => {
-      console.error("Prisma connection error:", error);
-    });
+    // Try to connect and log any errors
+    prisma.$connect()
+      .then(() => {
+        console.log('Prisma Client connected successfully');
+      })
+      .catch((error) => {
+        console.error("Prisma connection error:", error);
+        console.error("Error code:", error.code);
+        console.error("Connection URL host:", finalUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
+      });
   }
   return prisma;
 };
