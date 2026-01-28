@@ -15,36 +15,60 @@ const authHandler = toNextJsHandler(auth);
  * Instead of making an HTTP fetch, we call the auth handler directly since
  * we're on the same server.
  */
-// Get the auth service base URL
+// Get the auth service base URL - MUST use environment variable in production
 function getAuthServiceOrigin(): string {
-  const baseURL = process.env.BETTER_AUTH_BASE_URL || 
-                  process.env.AUTH_SERVICE_URL || 
-                  "";
-  if (baseURL) {
-    try {
-      return new URL(baseURL).origin;
-    } catch {
-      // Invalid URL, fall through
+  // Priority: BETTER_AUTH_BASE_URL > AUTH_SERVICE_URL > Railway env vars > request URL
+  let baseURL = process.env.BETTER_AUTH_BASE_URL || 
+                process.env.AUTH_SERVICE_URL || 
+                "";
+  
+  // Check Railway-specific environment variables
+  if (!baseURL) {
+    const railwayUrl = process.env.RAILWAY_PUBLIC_DOMAIN;
+    if (railwayUrl) {
+      baseURL = `https://${railwayUrl}`;
+      console.log("Using Railway public domain:", baseURL);
     }
   }
-  // Fallback to request URL origin
+  
+  if (baseURL) {
+    try {
+      const url = new URL(baseURL);
+      console.log("Using auth service origin from env:", url.origin);
+      return url.origin;
+    } catch (e) {
+      console.error("Invalid baseURL:", baseURL, e);
+    }
+  }
+  
   return "";
 }
 
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
   
-  // Get the auth service origin from environment or request
+  // Get the auth service origin - MUST use environment variable
   let baseOrigin = getAuthServiceOrigin();
+  
+  // If still no baseOrigin, try to get from request (but log warning)
   if (!baseOrigin) {
     try {
-      baseOrigin = new URL(req.url).origin;
+      const reqUrl = new URL(req.url);
+      baseOrigin = reqUrl.origin;
+      console.warn("WARNING: Using request URL origin as fallback:", baseOrigin);
+      console.warn("Please set BETTER_AUTH_BASE_URL environment variable in Railway!");
+      console.warn("Current env vars:", {
+        BETTER_AUTH_BASE_URL: process.env.BETTER_AUTH_BASE_URL ? "SET" : "NOT SET",
+        AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL ? "SET" : "NOT SET",
+        RAILWAY_PUBLIC_DOMAIN: process.env.RAILWAY_PUBLIC_DOMAIN || "NOT SET",
+      });
     } catch {
       baseOrigin = "http://localhost:3001";
+      console.warn("WARNING: Using default localhost origin");
     }
   }
   
-  console.log("OAuth init - baseOrigin:", baseOrigin, "origin:", origin);
+  console.log("OAuth init - baseOrigin:", baseOrigin, "request origin:", origin);
 
   try {
     const contentType = req.headers.get("content-type") || "";
