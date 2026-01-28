@@ -46,12 +46,15 @@ export async function POST(req: NextRequest) {
     const errorCallbackURL = body.errorCallbackURL;
 
     // Create a new request to the auth endpoint
+    // Include Origin header - Better-auth requires it for security
     const authUrl = new URL("/api/auth/sign-in/social", baseOrigin);
     const authRequest = new NextRequest(authUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Cookie": req.headers.get("cookie") || "",
+        "Origin": baseOrigin, // Better-auth requires Origin header - use auth service origin
+        "Referer": baseOrigin, // Use auth service origin for internal call
       },
       body: JSON.stringify({
         provider,
