@@ -94,13 +94,35 @@ const getBaseURL = (): string => {
 const getTrustedOrigins = (): string[] => {
   const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
   if (allowedOrigins) {
-    return allowedOrigins
+    const origins = allowedOrigins
       .split(",")
       .map(origin => origin.trim())
       .filter(origin => origin.length > 0);
+    if (origins.length > 0) {
+      return origins;
+    }
   }
-  // Allow all origins for cross-origin OAuth to work
-  return ["*"];
+  // Default: list common localhost origins explicitly
+  // Avoid using "*" wildcard as it may cause "i.includes is not a function" error
+  // Better-auth will also trust the baseURL automatically
+  const baseURL = getBaseURL();
+  const baseOrigin = baseURL ? new URL(baseURL).origin : "";
+  
+  const defaultOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+  ];
+  
+  // Add baseURL origin if it's different
+  if (baseOrigin && !defaultOrigins.includes(baseOrigin)) {
+    defaultOrigins.push(baseOrigin);
+  }
+  
+  return defaultOrigins;
 };
 
 export const auth = betterAuth({
@@ -122,12 +144,13 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+      // GitHub scope - user:email is required for email access
       scope: ["user:email"],
     },
   },
   // Handle OAuth errors and redirects properly
   onAPIError: {
-    errorURL: (error, request) => {
+    errorURL: (error: any, request:   any) => {
       // Get the callbackURL from the request if available
       const url = new URL(request.url);
       const callbackURL = url.searchParams.get("callbackURL") || 

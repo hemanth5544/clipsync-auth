@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.9.0",
-    "better-auth": "^1.0.0",
+    "better-auth": "^1.4.17",
     "jsonwebtoken": "^9.0.2",
     "next": "^14.1.0"
   },
