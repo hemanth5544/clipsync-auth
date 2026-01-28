@@ -99,7 +99,8 @@ const getTrustedOrigins = (): string[] => {
       .map(origin => origin.trim())
       .filter(origin => origin.length > 0);
   }
-  return ["http://localhost:3000", "http://localhost:3001"];
+  // Allow all origins for cross-origin OAuth to work
+  return ["*"];
 };
 
 export const auth = betterAuth({
@@ -109,7 +110,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL: getBaseURL(),
   basePath: "/api/auth",
-  trustedOrigins: getTrustedOrigins(), // Add this line
+  trustedOrigins: getTrustedOrigins(),
   emailAndPassword: {
     enabled: true,
   },
@@ -122,6 +123,20 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
       scope: ["user:email"],
+    },
+  },
+  // Handle OAuth errors and redirects properly
+  onAPIError: {
+    errorURL: (error, request) => {
+      // Get the callbackURL from the request if available
+      const url = new URL(request.url);
+      const callbackURL = url.searchParams.get("callbackURL") || 
+                         request.headers.get("referer") || 
+                         "/";
+      const errorURL = new URL(callbackURL);
+      errorURL.searchParams.set("error", error.code || "oauth_error");
+      errorURL.searchParams.set("error_description", error.message || "Authentication failed");
+      return errorURL.toString();
     },
   },
 });
