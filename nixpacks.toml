@@ -21,7 +21,7 @@ cmds = [
 # Next.js standalone mode: server.js is in .next/standalone/
 # Railway sets PORT automatically, we just need to bind to 0.0.0.0
 [start]
-cmd = "cd .next/standalone && HOSTNAME=0.0.0.0 node server.js"
+cmd = "pnpm run dev"
 
 [providers]
 node = "18"

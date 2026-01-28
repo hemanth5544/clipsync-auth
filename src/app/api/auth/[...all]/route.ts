@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     
     // Log callback requests for debugging
-    if (url.pathname.includes('/callback/')) {
+    if (url.pathname?.includes('/callback/')) {
       console.log('OAuth callback received:', {
         path: url.pathname,
         provider: url.pathname.split('/callback/')[1],
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     
     // For OAuth callbacks, try to redirect to error page instead of JSON
     const url = new URL(req.url);
-    if (url.pathname.includes('/callback/')) {
+    if (url.pathname?.includes('/callback/')) {
       const errorPage = new URL("/", url.origin);
       errorPage.searchParams.set("error", error?.code || "oauth_error");
       errorPage.searchParams.set("error_description", error?.message || "Authentication failed");
