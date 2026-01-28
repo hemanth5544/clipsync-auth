@@ -15,17 +15,36 @@ const authHandler = toNextJsHandler(auth);
  * Instead of making an HTTP fetch, we call the auth handler directly since
  * we're on the same server.
  */
+// Get the auth service base URL
+function getAuthServiceOrigin(): string {
+  const baseURL = process.env.BETTER_AUTH_BASE_URL || 
+                  process.env.AUTH_SERVICE_URL || 
+                  "";
+  if (baseURL) {
+    try {
+      return new URL(baseURL).origin;
+    } catch {
+      // Invalid URL, fall through
+    }
+  }
+  // Fallback to request URL origin
+  return "";
+}
+
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
-  const baseOrigin = (() => {
+  
+  // Get the auth service origin from environment or request
+  let baseOrigin = getAuthServiceOrigin();
+  if (!baseOrigin) {
     try {
-      return new URL(req.url).origin;
+      baseOrigin = new URL(req.url).origin;
     } catch {
-      return process.env.BETTER_AUTH_BASE_URL || 
-             process.env.AUTH_SERVICE_URL || 
-             "http://localhost:3001";
+      baseOrigin = "http://localhost:3001";
     }
-  })();
+  }
+  
+  console.log("OAuth init - baseOrigin:", baseOrigin, "origin:", origin);
 
   try {
     const contentType = req.headers.get("content-type") || "";

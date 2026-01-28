@@ -87,12 +87,27 @@ const getTrustedOrigins = (): string[] => {
       .map(origin => origin.trim())
       .filter(origin => origin.length > 0);
     if (origins.length > 0) {
+      // Always include the baseURL origin for internal calls
+      const baseURL = getBaseURL();
+      const baseOrigin = baseURL ? new URL(baseURL).origin : "";
+      if (baseOrigin && !origins.includes(baseOrigin)) {
+        origins.push(baseOrigin);
+      }
       return origins;
     }
   }
-  // Return empty array - Better-auth will trust baseURL automatically
-  // This avoids the "i.includes is not a function" error
-  // All origins are allowed via CORS headers in the route handlers
+  // Include baseURL origin for internal calls
+  // Better-auth needs this to allow internal requests
+  const baseURL = getBaseURL();
+  if (baseURL) {
+    try {
+      const baseOrigin = new URL(baseURL).origin;
+      return [baseOrigin];
+    } catch {
+      // Invalid baseURL, fall through
+    }
+  }
+  // Fallback: return empty array - Better-auth will trust baseURL automatically
   return [];
 };
 
