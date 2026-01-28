@@ -68,20 +68,70 @@ export async function POST(req: NextRequest) {
       throw new Error("Auth handler returned null response");
     }
 
-    // Parse the JSON response from Better-auth
-    let data: { url?: string; error?: string };
-    try {
-      data = await authResponse.json();
-    } catch (parseError) {
-      // If response is not JSON, it might be a redirect or error
-      const responseText = await authResponse.text();
-      console.error("Auth response was not JSON:", responseText.substring(0, 200));
-      throw new Error("Auth service returned invalid response");
+    console.log("Auth handler response:", {
+      status: authResponse.status,
+      statusText: authResponse.statusText,
+      contentType: authResponse.headers.get("content-type"),
+      location: authResponse.headers.get("Location"),
+    });
+
+    // Better-auth might return either:
+    // 1. A redirect response (302) with Location header
+    // 2. A JSON response with { url: "...", error: "..." }
+    let redirectUrl: string | null = null;
+    
+    // Check if it's a redirect response
+    if (authResponse.status >= 300 && authResponse.status < 400) {
+      redirectUrl = authResponse.headers.get("Location");
+      if (redirectUrl) {
+        console.log("Auth handler returned redirect:", redirectUrl);
+      } else {
+        console.warn("Redirect response but no Location header");
+      }
+    } else if (authResponse.status === 200) {
+      // Try to parse as JSON
+      try {
+        const contentType = authResponse.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          // Clone response before reading body (in case we need to read it again)
+          const clonedResponse = authResponse.clone();
+          const data = await clonedResponse.json() as { url?: string; error?: string };
+          console.log("Auth handler returned JSON:", data);
+          redirectUrl = data?.url || null;
+          
+          if (!redirectUrl && data?.error) {
+            throw new Error(data.error);
+          }
+        } else {
+          // Not JSON, might be HTML or text
+          const clonedResponse = authResponse.clone();
+          const responseText = await clonedResponse.text();
+          console.error("Auth response was not JSON or redirect:", {
+            status: authResponse.status,
+            contentType,
+            preview: responseText.substring(0, 200),
+          });
+          throw new Error("Auth service returned unexpected response format");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse auth response:", parseError);
+        throw new Error("Auth service returned invalid response");
+      }
+    } else {
+      // Error status
+      const clonedResponse = authResponse.clone();
+      const responseText = await clonedResponse.text();
+      console.error("Auth handler returned error:", {
+        status: authResponse.status,
+        statusText: authResponse.statusText,
+        body: responseText.substring(0, 500),
+      });
+      throw new Error(`Auth service returned error: ${authResponse.status} ${authResponse.statusText}`);
     }
 
-    const redirectUrl = data?.url;
     if (!redirectUrl) {
-      const err = data?.error || "No redirect URL from auth";
+      const err = "No redirect URL from auth";
+      console.error("No redirect URL found in auth response");
       const errorPage = new URL("/", baseOrigin);
       errorPage.searchParams.set("error", "oauth_init_failed");
       errorPage.searchParams.set("error_description", err);
