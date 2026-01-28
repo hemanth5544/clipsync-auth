@@ -80,38 +80,13 @@ const getBaseURL = (): string => {
 
 
 const getTrustedOrigins = (): string[] | ((origin: string) => boolean) => {
-  // If ALLOWED_ORIGINS is explicitly set, use it
-  const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
-  if (allowedOrigins && allowedOrigins.trim() !== "") {
-    const origins = allowedOrigins
-      .split(",")
-      .map(origin => origin.trim())
-      .filter(origin => origin.length > 0);
-    if (origins.length > 0) {
-      // Always include baseURL origin for internal calls
-      const baseURL = getBaseURL();
-      if (baseURL) {
-        try {
-          const baseOrigin = new URL(baseURL).origin;
-          if (!origins.includes(baseOrigin)) {
-            origins.push(baseOrigin);
-          }
-        } catch {
-          // Ignore invalid baseURL
-        }
-      }
-      console.log("Using ALLOWED_ORIGINS from env:", origins);
-      return origins;
-    }
-  }
-  
-  // Allow ALL origins - use function that always returns true
+  // ALWAYS allow ALL origins - use function that always returns true
+  // This is what the user requested - allow all domains
   // This avoids the "i.includes is not a function" error from using "*"
-  console.log("Allowing ALL origins (trustedOrigins function)");
+  console.log("Allowing ALL origins (trustedOrigins function) - no restrictions");
   return (origin: string | null | undefined): boolean => {
     // Always trust any origin (including null/undefined for same-origin requests)
-    if (!origin) return true;
-    console.log("Trusting origin:", origin);
+    // This allows requests from any domain
     return true;
   };
 };

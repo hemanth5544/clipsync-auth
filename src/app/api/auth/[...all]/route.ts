@@ -5,6 +5,10 @@ import { addCorsHeaders } from "@/lib/cors";
 
 const handler = toNextJsHandler(auth);
 
+// Export route config to ensure OPTIONS is handled
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin");
   const url = new URL(req.url);
