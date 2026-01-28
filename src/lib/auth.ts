@@ -79,16 +79,53 @@ const getBaseURL = (): string => {
 };
 
 
-const getTrustedOrigins = (): string[] | ((origin: string) => boolean) => {
-  // ALWAYS allow ALL origins - use function that always returns true
-  // This is what the user requested - allow all domains
-  // This avoids the "i.includes is not a function" error from using "*"
-  console.log("Allowing ALL origins (trustedOrigins function) - no restrictions");
-  return (origin: string | null | undefined): boolean => {
-    // Always trust any origin (including null/undefined for same-origin requests)
-    // This allows requests from any domain
-    return true;
-  };
+const getTrustedOrigins = (): string[] => {
+  // Build comprehensive list of trusted origins
+  // Include baseURL and common patterns
+  // CORS headers allow ALL origins, but Better-auth needs specific origins listed
+  const baseURL = getBaseURL();
+  const origins: string[] = [];
+  
+  // Always include baseURL origin for internal calls
+  if (baseURL) {
+    try {
+      const baseOrigin = new URL(baseURL).origin;
+      origins.push(baseOrigin);
+    } catch (e) {
+      console.error("Invalid baseURL:", baseURL, e);
+    }
+  }
+  
+  // Add common localhost origins (both http and https)
+  const commonOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "https://localhost:3000",
+    "https://localhost:3001",
+    "https://localhost:3002",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+  ];
+  
+  origins.push(...commonOrigins);
+  
+  // Add origins from ALLOWED_ORIGINS if set
+  const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
+  if (allowedOrigins) {
+    const envOrigins = allowedOrigins
+      .split(",")
+      .map(origin => origin.trim())
+      .filter(origin => origin.length > 0 && !origins.includes(origin));
+    origins.push(...envOrigins);
+  }
+  
+  // Remove duplicates
+  const uniqueOrigins = Array.from(new Set(origins));
+  console.log("Trusted origins (CORS allows all, Better-auth trusts these):", uniqueOrigins);
+  
+  return uniqueOrigins;
 };
 
 export const auth = betterAuth({
@@ -98,8 +135,8 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL: getBaseURL(),
   basePath: "/api/auth",
-  trustedOrigins: getTrustedOrigins(),
-  emailAndPassword: {
+  trustedOrigins: ["*.*"] ,
+   emailAndPassword: {
     enabled: true,
   },
   socialProviders: {

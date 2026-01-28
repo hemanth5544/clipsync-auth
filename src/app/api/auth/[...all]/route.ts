@@ -111,6 +111,34 @@ export async function POST(req: NextRequest) {
     console.error("Error type:", typeof error);
     console.error("Error stack:", error?.stack);
     
+    // Check for origin-related errors - allow them since CORS allows all origins
+    const isOriginError = error?.code === "INVALID_ORIGIN" || 
+                         error?.code === "MISSING_OR_NULL_ORIGIN" ||
+                         error?.message?.includes("Invalid origin") ||
+                         error?.message?.includes("Missing or null Origin");
+    
+    if (isOriginError) {
+      // Origin validation failed in Better-auth, but we allow all origins via CORS
+      // Return a proper response with CORS headers instead of error
+      console.warn("Origin validation failed in Better-auth, but allowing via CORS:", origin);
+      // For sign-in/social, we need to return a proper response
+      // Try to create a response that allows the request to proceed
+      const url = new URL(req.url);
+      if (url.pathname.includes('/sign-in/social')) {
+        // This is an OAuth initiation - we need Better-auth to handle it
+        // But since origin check failed, we'll need to work around it
+        // For now, return error but with CORS headers
+        const response = NextResponse.json(
+          { 
+            error: "Origin validation failed", 
+            message: "Please ensure your origin is allowed" 
+          },
+          { status: 403 }
+        );
+        return addCorsHeaders(response, origin);
+      }
+    }
+    
     // Check for the specific "includes" error
     const isIncludesError = error?.message?.includes('includes is not a function') || 
                            error?.stack?.includes('includes is not a function') ||
