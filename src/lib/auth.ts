@@ -41,30 +41,18 @@ const getPrisma = (): PrismaClient => {
       process.env.DATABASE_URL = dbUrl;
     }
     
-    // Use the connection URL directly (should include SSL params for Neon)
+    // Use the connection URL directly (Railway Postgres handles SSL automatically)
     const connectionUrl = process.env.DATABASE_URL || dbUrl;
     
-    // For Neon and other cloud databases, ensure SSL is enabled
-    // Neon connection strings usually include ?sslmode=require
-    // If not present, add it
-    let finalUrl = connectionUrl;
-    if (connectionUrl.includes('neon.tech') || connectionUrl.includes('neon.tech')) {
-      if (!connectionUrl.includes('sslmode=')) {
-        finalUrl = connectionUrl.includes('?') 
-          ? `${connectionUrl}&sslmode=require`
-          : `${connectionUrl}?sslmode=require`;
-      }
-    }
-    
     console.log('Initializing Prisma Client...');
-    console.log('Database host:', finalUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
+    console.log('Database host:', connectionUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
     
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
       errorFormat: "pretty",
       datasources: {
         db: {
-          url: finalUrl,
+          url: connectionUrl,
         },
       },
     });
@@ -77,7 +65,7 @@ const getPrisma = (): PrismaClient => {
       .catch((error) => {
         console.error("Prisma connection error:", error);
         console.error("Error code:", error.code);
-        console.error("Connection URL host:", finalUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
+        console.error("Connection URL host:", connectionUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
       });
   }
   return prisma;
@@ -102,27 +90,10 @@ const getTrustedOrigins = (): string[] => {
       return origins;
     }
   }
-  // Default: list common localhost origins explicitly
-  // Avoid using "*" wildcard as it may cause "i.includes is not a function" error
-  // Better-auth will also trust the baseURL automatically
-  const baseURL = getBaseURL();
-  const baseOrigin = baseURL ? new URL(baseURL).origin : "";
-  
-  const defaultOrigins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:3002",
-  ];
-  
-  // Add baseURL origin if it's different
-  if (baseOrigin && !defaultOrigins.includes(baseOrigin)) {
-    defaultOrigins.push(baseOrigin);
-  }
-  
-  return defaultOrigins;
+  // Return empty array - Better-auth will trust baseURL automatically
+  // This avoids the "i.includes is not a function" error
+  // All origins are allowed via CORS headers in the route handlers
+  return [];
 };
 
 export const auth = betterAuth({
@@ -150,16 +121,25 @@ export const auth = betterAuth({
   },
   // Handle OAuth errors and redirects properly
   onAPIError: {
-    errorURL: (error: any, request:   any) => {
+    errorURL: (error: any, request: any) => {
       // Get the callbackURL from the request if available
-      const url = new URL(request.url);
-      const callbackURL = url.searchParams.get("callbackURL") || 
-                         request.headers.get("referer") || 
-                         "/";
-      const errorURL = new URL(callbackURL);
-      errorURL.searchParams.set("error", error.code || "oauth_error");
-      errorURL.searchParams.set("error_description", error.message || "Authentication failed");
-      return errorURL.toString();
+      try {
+        const url = new URL(request.url);
+        const callbackURL = url.searchParams.get("callbackURL") || 
+                           request.headers.get("referer") || 
+                           "/";
+        const errorURL = new URL(callbackURL);
+        errorURL.searchParams.set("error", error.code || "oauth_error");
+        errorURL.searchParams.set("error_description", error.message || "Authentication failed");
+        return errorURL.toString();
+      } catch {
+        // Fallback to base URL if callbackURL parsing fails
+        const baseURL = getBaseURL();
+        const errorURL = new URL("/", baseURL);
+        errorURL.searchParams.set("error", error.code || "oauth_error");
+        errorURL.searchParams.set("error_description", error.message || "Authentication failed");
+        return errorURL.toString();
+      }
     },
   },
 });

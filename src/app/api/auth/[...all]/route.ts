@@ -12,61 +12,100 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  const url = new URL(req.url);
+  const isCallback = url.pathname?.includes('/callback/');
+  
+  // Log callback requests for debugging
+  if (isCallback) {
+    console.log('OAuth callback received:', {
+      path: url.pathname,
+      provider: url.pathname?.split('/callback/')[1] || 'unknown',
+      hasCode: url.searchParams.has('code'),
+      hasState: url.searchParams.has('state'),
+    });
+  }
+  
   try {
-    const origin = req.headers.get("origin");
-    const url = new URL(req.url);
+    // Wrap handler call to catch Better-auth internal errors
+    const response = await handler.GET(req);
     
-    // Log callback requests for debugging
-    if (url.pathname?.includes('/callback/')) {
-      console.log('OAuth callback received:', {
-        path: url.pathname,
-        provider: url.pathname.split('/callback/')[1],
-        hasCode: url.searchParams.has('code'),
-        hasState: url.searchParams.has('state'),
-      });
+    // Check if response is valid
+    if (!response) {
+      throw new Error("Handler returned null response");
     }
     
-    const response = await handler.GET(req);
     return addCorsHeaders(response, origin);
   } catch (error: any) {
     console.error("Better-Auth GET error:", error);
+    console.error("Error type:", typeof error);
+    console.error("Error constructor:", error?.constructor?.name);
     console.error("Error stack:", error?.stack);
     console.error("Error details:", {
       message: error?.message,
       code: error?.code,
       name: error?.name,
       url: req.url,
+      // Check if error has the problematic property
+      errorString: String(error),
     });
     
-    // For OAuth callbacks, try to redirect to error page instead of JSON
-    const url = new URL(req.url);
-    if (url.pathname?.includes('/callback/')) {
+    // Check for the specific "includes" error
+    const isIncludesError = error?.message?.includes('includes is not a function') || 
+                           error?.stack?.includes('includes is not a function') ||
+                           String(error).includes('includes is not a function');
+    
+    if (isIncludesError || isCallback) {
+      // For OAuth callbacks or includes errors, redirect to error page
       const errorPage = new URL("/", url.origin);
       errorPage.searchParams.set("error", error?.code || "oauth_error");
-      errorPage.searchParams.set("error_description", error?.message || "Authentication failed");
+      errorPage.searchParams.set("error_description", 
+        isIncludesError 
+          ? "OAuth processing error. Please try again." 
+          : (error?.message || "Authentication failed"));
       const redirectResponse = NextResponse.redirect(errorPage, 302);
-      return addCorsHeaders(redirectResponse, req.headers.get("origin"));
+      return addCorsHeaders(redirectResponse, origin);
     }
     
     const response = NextResponse.json(
       { error: "Authentication error", message: error?.message || "Unknown error" },
       { status: 500 }
     );
-    return addCorsHeaders(response, req.headers.get("origin"));
+    return addCorsHeaders(response, origin);
   }
 }
 
 export async function POST(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  
   try {
-    const origin = req.headers.get("origin");
     const response = await handler.POST(req);
+    
+    // Check if response is valid
+    if (!response) {
+      throw new Error("Handler returned null response");
+    }
+    
     return addCorsHeaders(response, origin);
   } catch (error: any) {
     console.error("Better-Auth POST error:", error);
+    console.error("Error type:", typeof error);
+    console.error("Error stack:", error?.stack);
+    
+    // Check for the specific "includes" error
+    const isIncludesError = error?.message?.includes('includes is not a function') || 
+                           error?.stack?.includes('includes is not a function') ||
+                           String(error).includes('includes is not a function');
+    
     const response = NextResponse.json(
-      { error: "Authentication error", message: error?.message || "Unknown error" },
+      { 
+        error: "Authentication error", 
+        message: isIncludesError 
+          ? "OAuth processing error. Please try again." 
+          : (error?.message || "Unknown error") 
+      },
       { status: 500 }
     );
-    return addCorsHeaders(response, req.headers.get("origin"));
+    return addCorsHeaders(response, origin);
   }
 }

@@ -14,14 +14,12 @@ cmds = [
 [phases.build]
 cmds = [
   "mkdir -p public",
-  "pnpm prisma:generate",
-  "SKIP_ENV_VALIDATION=true pnpm build"
+  "pnpm prisma:generate"
 ]
 
-# Next.js standalone mode: server.js is in .next/standalone/
-# Railway sets PORT automatically, we just need to bind to 0.0.0.0
+# Run in dev mode - Railway sets PORT automatically
 [start]
-cmd = "pnpm run dev"
+cmd = "pnpm run dev:network"
 
 [providers]
 node = "18"
