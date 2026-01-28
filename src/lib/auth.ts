@@ -79,52 +79,41 @@ const getBaseURL = (): string => {
 };
 
 
-const getTrustedOrigins = (): string[] => {
-  const baseURL = getBaseURL();
-  let baseOrigin = "";
-  if (baseURL) {
-    try {
-      baseOrigin = new URL(baseURL).origin;
-      console.log("Auth baseURL origin:", baseOrigin);
-    } catch (e) {
-      console.error("Invalid baseURL:", baseURL, e);
+const getTrustedOrigins = (): string[] | ((origin: string) => boolean) => {
+  // If ALLOWED_ORIGINS is explicitly set, use it
+  const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
+  if (allowedOrigins && allowedOrigins.trim() !== "") {
+    const origins = allowedOrigins
+      .split(",")
+      .map(origin => origin.trim())
+      .filter(origin => origin.length > 0);
+    if (origins.length > 0) {
+      // Always include baseURL origin for internal calls
+      const baseURL = getBaseURL();
+      if (baseURL) {
+        try {
+          const baseOrigin = new URL(baseURL).origin;
+          if (!origins.includes(baseOrigin)) {
+            origins.push(baseOrigin);
+          }
+        } catch {
+          // Ignore invalid baseURL
+        }
+      }
+      console.log("Using ALLOWED_ORIGINS from env:", origins);
+      return origins;
     }
   }
   
-  // Build list of trusted origins
-  const origins: string[] = [];
-  
-  // Always include baseURL origin for internal calls
-  if (baseOrigin) {
-    origins.push(baseOrigin);
-  }
-  
-  // Add common localhost origins for development
-  origins.push(
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:3002",
-    "https://localhost:3000",
-    "https://localhost:3001",
-  );
-  
-  // Add origins from ALLOWED_ORIGINS environment variable
-  const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
-  if (allowedOrigins) {
-    const envOrigins = allowedOrigins
-      .split(",")
-      .map(origin => origin.trim())
-      .filter(origin => origin.length > 0 && !origins.includes(origin));
-    origins.push(...envOrigins);
-  }
-  
-  // Remove duplicates
-  const uniqueOrigins = Array.from(new Set(origins));
-  console.log("Trusted origins:", uniqueOrigins);
-  return uniqueOrigins;
+  // Allow ALL origins - use function that always returns true
+  // This avoids the "i.includes is not a function" error from using "*"
+  console.log("Allowing ALL origins (trustedOrigins function)");
+  return (origin: string | null | undefined): boolean => {
+    // Always trust any origin (including null/undefined for same-origin requests)
+    if (!origin) return true;
+    console.log("Trusting origin:", origin);
+    return true;
+  };
 };
 
 export const auth = betterAuth({

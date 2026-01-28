@@ -7,8 +7,23 @@ const handler = toNextJsHandler(auth);
 
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin");
+  const url = new URL(req.url);
+  
+  // Handle CORS preflight for all auth endpoints
+  // Better-auth might not handle OPTIONS, so we handle it here
   const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response, origin);
+  
+  // Add CORS headers - allow all origins
+  const corsResponse = addCorsHeaders(response, origin);
+  
+  // Log for debugging
+  console.log("OPTIONS preflight:", {
+    path: url.pathname,
+    origin: origin || "none",
+    method: req.headers.get("access-control-request-method"),
+  });
+  
+  return corsResponse;
 }
 
 export async function GET(req: NextRequest) {
