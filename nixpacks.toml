@@ -18,8 +18,9 @@ cmds = [
 ]
 
 # Run in dev mode - Railway sets PORT automatically
+# Railway will use the "start" script from package.json which now runs dev mode
 [start]
-cmd = "pnpm run dev:network"
+cmd = "pnpm start"
 
 [providers]
 node = "18"
