@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm prisma:generate && PORT=3001 next dev",
     "dev:network": "pnpm prisma:generate && PORT=3001 next dev -H 0.0.0.0",
-    "build": "SKIP_ENV_VALIDATION=true next build",
+    
     "start": "PORT=3001 next start",
     "prisma:generate": "node scripts/prisma-with-env.js prisma generate --schema=./prisma/schema.prisma",
     "prisma:db:push": "node scripts/prisma-with-env.js prisma db push --schema=./prisma/schema.prisma",
