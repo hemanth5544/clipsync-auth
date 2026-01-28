@@ -135,7 +135,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   baseURL: getBaseURL(),
   basePath: "/api/auth",
-  trustedOrigins: ["*.*"] ,
+  trustedOrigins: getTrustedOrigins(),
    emailAndPassword: {
     enabled: true,
   },

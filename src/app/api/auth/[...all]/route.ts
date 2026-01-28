@@ -12,19 +12,30 @@ export const dynamic = 'force-dynamic';
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin");
   const url = new URL(req.url);
+  const requestedMethod = req.headers.get("access-control-request-method");
+  const requestedHeaders = req.headers.get("access-control-request-headers");
   
   // Handle CORS preflight for all auth endpoints
   // Better-auth might not handle OPTIONS, so we handle it here
   const response = new NextResponse(null, { status: 200 });
   
-  // Add CORS headers - allow all origins
+  // Add CORS headers - allow ALL origins
   const corsResponse = addCorsHeaders(response, origin);
+  
+  // Explicitly set the requested method and headers if provided
+  if (requestedMethod) {
+    corsResponse.headers.set("Access-Control-Allow-Methods", requestedMethod);
+  }
+  if (requestedHeaders) {
+    corsResponse.headers.set("Access-Control-Allow-Headers", requestedHeaders);
+  }
   
   // Log for debugging
   console.log("OPTIONS preflight:", {
     path: url.pathname,
     origin: origin || "none",
-    method: req.headers.get("access-control-request-method"),
+    requestedMethod: requestedMethod || "none",
+    requestedHeaders: requestedHeaders || "none",
   });
   
   return corsResponse;

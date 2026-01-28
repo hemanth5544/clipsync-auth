@@ -31,6 +31,33 @@ const nextConfig = {
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
   },
+  // Add CORS headers at Next.js level to ensure preflight requests work
+  async headers() {
+    return [
+      {
+        // Apply to all API routes
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Credentials',
+            value: 'true',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, Cookie, X-Requested-With',
+          },
+          {
+            key: 'Access-Control-Max-Age',
+            value: '86400',
+          },
+        ],
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig
