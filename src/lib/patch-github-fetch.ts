@@ -1,8 +1,4 @@
-/**
- * Patch globalThis.fetch so requests to GitHub API include required headers.
- * Must run before better-auth is imported (see auth.ts: import this first).
- * GitHub requires User-Agent: https://developer.github.com/changes/2013-04-24-user-agent-required/
- */
+
 const origFetch = globalThis.fetch;
 if (typeof origFetch === "function") {
   const userAgent = "ClipSync-Auth/1.0 (https://clipsync-auth.up.railway.app)";

@@ -6,6 +6,17 @@ import { NextRequest, NextResponse } from "next/server";
 // See: https://github.com/better-auth/better-auth/issues/4052
 const { GET: baseGet, POST: basePost } = toNextJsHandler(auth);
 
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "https://clipsync-auth.up.railway.app",
+  "https://clipsync.up.railway.app",
+  "https://clipsync-production.up.railway.app",
+  "app://.",
+  "app://localhost",
+];
+
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin, User-Agent",
@@ -13,9 +24,16 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Max-Age": "86400",
 };
 
+function corsAllowOrigin(origin: string | null): string {
+  const allow =
+    origin &&
+    (ALLOWED_ORIGINS.includes(origin) || origin.startsWith("app://"));
+  return allow ? origin : ALLOWED_ORIGINS[0];
+}
+
 function buildCorsResponse(origin: string | null, status: number, body: BodyInit | null = null): NextResponse {
   const headers = { ...corsHeaders };
-  headers["Access-Control-Allow-Origin"] = origin || "*";
+  headers["Access-Control-Allow-Origin"] = corsAllowOrigin(origin);
   return new NextResponse(body, { status, headers }) as NextResponse;
 }
 
@@ -28,7 +46,7 @@ function applyCorsToResponse(res: Response, origin: string | null): NextResponse
   for (const [key, value] of Object.entries(corsHeaders)) {
     out.headers.set(key, value);
   }
-  out.headers.set("Access-Control-Allow-Origin", origin || "*");
+  out.headers.set("Access-Control-Allow-Origin", corsAllowOrigin(origin));
   return out;
 }
 
@@ -37,8 +55,8 @@ export const dynamic = "force-dynamic";
 
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin");
-  // Allow all origins: echo back origin for preflight
-  return buildCorsResponse(origin, 204);
+  // Return 200 with CORS headers so preflight succeeds (desktop app app:// origin)
+  return buildCorsResponse(origin, 200);
 }
 
 export async function GET(req: NextRequest) {

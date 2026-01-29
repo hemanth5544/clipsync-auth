@@ -1,10 +1,8 @@
-// MUST be first: patch fetch for GitHub API (User-Agent) before better-auth loads
 import "./patch-github-fetch";
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
-// Get DATABASE_URL from environment
 const getDatabaseUrl = (): string => {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
@@ -43,11 +41,9 @@ const getPrisma = (): PrismaClient => {
       process.env.DATABASE_URL = dbUrl;
     }
     
-    // Use the connection URL directly (Railway Postgres handles SSL automatically)
     const connectionUrl = process.env.DATABASE_URL || dbUrl;
     
     console.log('Initializing Prisma Client...');
-    console.log('Database host:', connectionUrl.replace(/:[^:@]+@/, ':****@').split('@')[1]?.split('/')[0] || 'unknown');
     
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
@@ -59,7 +55,6 @@ const getPrisma = (): PrismaClient => {
       },
     });
     
-    // Try to connect and log any errors
     prisma.$connect()
       .then(() => {
         console.log('Prisma Client connected successfully');
@@ -73,7 +68,6 @@ const getPrisma = (): PrismaClient => {
   return prisma;
 };
 
-// Get base URL for auth service
 const getBaseURL = (): string => {
   return process.env.BETTER_AUTH_BASE_URL || 
          process.env.AUTH_SERVICE_URL || 
@@ -82,13 +76,10 @@ const getBaseURL = (): string => {
 
 
 const getTrustedOrigins = (): string[] => {
-  // Build comprehensive list of trusted origins
-  // Include baseURL and common patterns
-  // CORS headers allow ALL origins, but Better-auth needs specific origins listed
+
   const baseURL = getBaseURL();
   const origins: string[] = [];
   
-  // Always include baseURL origin for internal calls
   if (baseURL) {
     try {
       const baseOrigin = new URL(baseURL).origin;
@@ -98,7 +89,6 @@ const getTrustedOrigins = (): string[] => {
     }
   }
   
-  // Add common localhost origins (both http and https)
   const commonOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
@@ -112,11 +102,12 @@ const getTrustedOrigins = (): string[] => {
     "https://clipsync-auth.up.railway.app",
     "https://clipsync-production.up.railway.app",
     "https://clipsync.up.railway.app",
+    "app://.",
+    "app://localhost",
   ];
   
   origins.push(...commonOrigins);
   
-  // Add origins from ALLOWED_ORIGINS if set
   const allowedOrigins = process.env.ALLOWED_ORIGINS || "";
   if (allowedOrigins) {
     const envOrigins = allowedOrigins
@@ -126,7 +117,6 @@ const getTrustedOrigins = (): string[] => {
     origins.push(...envOrigins);
   }
   
-  // Remove duplicates
   const uniqueOrigins = Array.from(new Set(origins));
   console.log("Trusted origins (CORS allows all, Better-auth trusts these):", uniqueOrigins);
   
@@ -163,14 +153,11 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-      // read:user = profile (required for GET /user); user:email = email
       scope: ["read:user", "user:email"],
     },
   },
-  // Handle OAuth errors and redirects properly
   onAPIError: {
     errorURL: (error: any, request: any) => {
-      // Get the callbackURL from the request if available
       try {
         const url = new URL(request.url);
         const callbackURL = url.searchParams.get("callbackURL") || 
