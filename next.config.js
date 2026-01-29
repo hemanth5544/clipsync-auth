@@ -48,7 +48,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization, Cookie, X-Requested-With',
+            value: 'Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin, User-Agent',
           },
           {
             key: 'Access-Control-Max-Age',

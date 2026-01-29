@@ -8,7 +8,7 @@ const { GET: baseGet, POST: basePost } = toNextJsHandler(auth);
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin, User-Agent",
   "Access-Control-Allow-Credentials": "true",
   "Access-Control-Max-Age": "86400",
 };
