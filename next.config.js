@@ -12,6 +12,9 @@ try {
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  experimental: {
+    instrumentationHook: true,
+  },
   // Skip type checking and linting during build
   typescript: {
     ignoreBuildErrors: true,

@@ -2,23 +2,6 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 
-// GitHub API requires a User-Agent header (https://developer.github.com/changes/2013-04-24-user-agent-required/)
-// Patch fetch so requests to api.github.com include it (fixes "unable_to_get_user_info")
-if (typeof globalThis.fetch === "function") {
-  const origFetch = globalThis.fetch;
-  globalThis.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
-    if (url && url.startsWith("https://api.github.com")) {
-      const headers = new Headers(init?.headers);
-      if (!headers.has("User-Agent")) {
-        headers.set("User-Agent", "ClipSync-Auth/1.0 (https://clipsync-auth.up.railway.app)");
-      }
-      init = { ...init, headers };
-    }
-    return origFetch.call(this, input, init);
-  };
-}
-
 // Get DATABASE_URL from environment
 const getDatabaseUrl = (): string => {
   if (process.env.DATABASE_URL) {
