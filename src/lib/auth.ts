@@ -109,6 +109,9 @@ const getTrustedOrigins = (): string[] => {
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:3002",
+    "https://clipsync-auth.up.railway.app",
+    "https://clipsync-production.up.railway.app",
+    "https://clipsync.up.railway.app",
   ];
   
   origins.push(...commonOrigins);
@@ -138,6 +141,17 @@ export const auth = betterAuth({
   baseURL: getBaseURL(),
   basePath: "/api/auth",
   trustedOrigins: getTrustedOrigins(),
+    advanced: {
+    useSecureCookies: true,
+    cookies: {
+      session_token: {
+        attributes: {
+          sameSite: "none",
+          secure: true,
+        },
+      },
+    },
+  },
    emailAndPassword: {
     enabled: true,
   },
