@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm prisma:generate && PORT=3001 next dev",
-    "dev:network": "pnpm prisma:generate && PORT=${PORT:-3001} next dev -H 0.0.0.0 -p ${PORT:-3001}",
-    "start": "pnpm prisma:generate && PORT=${PORT:-3001} next dev -H 0.0.0.0 -p ${PORT:-3001}",
+    "dev": "pnpm prisma:generate && PORT=3001 node server.js",
+    "dev:network": "pnpm prisma:generate && PORT=${PORT:-3001} node server.js",
+    "start": "pnpm prisma:generate && PORT=${PORT:-3001} node server.js",
     "prisma:generate": "node scripts/prisma-with-env.js prisma generate --schema=./prisma/schema.prisma",
     "prisma:db:push": "node scripts/prisma-with-env.js prisma db push --schema=./prisma/schema.prisma",
     "prisma:studio": "node scripts/prisma-with-env.js prisma studio --schema=./prisma/schema.prisma",
