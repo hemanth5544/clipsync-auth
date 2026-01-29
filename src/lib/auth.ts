@@ -2,6 +2,23 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 
+// GitHub API requires a User-Agent header (https://developer.github.com/changes/2013-04-24-user-agent-required/)
+// Patch fetch so requests to api.github.com include it (fixes "unable_to_get_user_info")
+if (typeof globalThis.fetch === "function") {
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+    if (url && url.startsWith("https://api.github.com")) {
+      const headers = new Headers(init?.headers);
+      if (!headers.has("User-Agent")) {
+        headers.set("User-Agent", "ClipSync-Auth/1.0 (https://clipsync-auth.up.railway.app)");
+      }
+      init = { ...init, headers };
+    }
+    return origFetch.call(this, input, init);
+  };
+}
+
 // Get DATABASE_URL from environment
 const getDatabaseUrl = (): string => {
   if (process.env.DATABASE_URL) {
@@ -147,8 +164,8 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-      // GitHub scope - user:email is required for email access
-      scope: ["user:email"],
+      // read:user = profile (required for GET /user); user:email = email
+      scope: ["read:user", "user:email"],
     },
   },
   // Handle OAuth errors and redirects properly
