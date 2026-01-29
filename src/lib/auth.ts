@@ -1,7 +1,9 @@
+// MUST be first: patch fetch for GitHub API (User-Agent) before better-auth loads
+import "./patch-github-fetch";
+
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
-
 // Get DATABASE_URL from environment
 const getDatabaseUrl = (): string => {
   if (process.env.DATABASE_URL) {
