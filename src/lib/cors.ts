@@ -1,5 +1,20 @@
 import { NextResponse } from "next/server";
 
+/** CORS headers for auth API (preflight and responses) */
+export const AUTH_CORS_HEADERS = {
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin, User-Agent",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Max-Age": "86400",
+} as const;
+
+/** Return 204 preflight response with CORS headers. Use for OPTIONS so preflight passes. */
+export function corsPreflightResponse(origin: string | null): NextResponse {
+  const res = new NextResponse(null, { status: 204 });
+  res.headers.set("Access-Control-Allow-Origin", origin || "*");
+  Object.entries(AUTH_CORS_HEADERS).forEach(([k, v]) => res.headers.set(k, v));
+  return res;
+}
 
 function getAllowedOrigins(): string[] {
   const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || "";
