@@ -99,9 +99,15 @@ const getTrustedOrigins = (): string[] => {
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:3002",
+    "http://192.168.0.107:3001", // auth base when testing from device
+    "http://localhost:8081",
+    "http://192.168.0.107:8081",
     "https://clipsync-auth.up.railway.app",
     "https://clipsync-production.up.railway.app",
     "https://clipsync.up.railway.app",
+    "exp://.",
+    "exp://192.168.0.107:8081",
+    "exp://localhost:8081",
     "app://.",
     "app://localhost",
   ];

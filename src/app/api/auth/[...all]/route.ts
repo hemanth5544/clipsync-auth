@@ -10,11 +10,16 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:3002",
+  "http://192.168.0.107:3001", // auth URL when testing from device (Expo Go)
   "https://clipsync-auth.up.railway.app",
   "https://clipsync.up.railway.app",
   "https://clipsync-production.up.railway.app",
   "app://.",
   "app://localhost",
+  "http://192.168.0.107:8081",
+  "http://localhost:8081",
+  "exp://192.168.0.107:8081",
+  "exp://localhost:8081",
 ];
 
 const corsHeaders: Record<string, string> = {
@@ -27,7 +32,9 @@ const corsHeaders: Record<string, string> = {
 function corsAllowOrigin(origin: string | null): string {
   const allow =
     origin &&
-    (ALLOWED_ORIGINS.includes(origin) || origin.startsWith("app://"));
+    (ALLOWED_ORIGINS.includes(origin) ||
+      origin.startsWith("app://") ||
+      origin.startsWith("exp://"));
   return allow ? origin : ALLOWED_ORIGINS[0];
 }
 
