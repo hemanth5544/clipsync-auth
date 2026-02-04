@@ -10,7 +10,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:3002",
-  "http://192.168.0.107:3001", // auth URL when testing from device (Expo Go)
+  "http://192.168.0.107:3001",
   "https://clipsync-auth.up.railway.app",
   "https://clipsync.up.railway.app",
   "https://clipsync-production.up.railway.app",
