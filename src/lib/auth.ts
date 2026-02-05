@@ -3,17 +3,12 @@ import "./patch-github-fetch";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
+import { sendWelcomeEmail } from "@/lib/email";
 const getDatabaseUrl = (): string => {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }
-  
-  // During build time, return a dummy URL (Next.js needs it for static analysis)
-  // At runtime, Railway will provide the real DATABASE_URL
-  if (process.env.NODE_ENV === 'production' && process.env.SKIP_ENV_VALIDATION) {
-    return "postgresql://dummy:dummy@localhost:5432/dummy";
-  }
-  
+ 
   throw new Error(
     "DATABASE_URL is required but not set.\n" +
     "Make sure DATABASE_URL is set in your .env file or environment variables."
@@ -43,7 +38,6 @@ const getPrisma = (): PrismaClient => {
     
     const connectionUrl = process.env.DATABASE_URL || dbUrl;
     
-    console.log('Initializing Prisma Client...');
     
     prisma = new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
@@ -166,6 +160,15 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
       scope: ["read:user", "user:email"],
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await sendWelcomeEmail({ email: user.email, name: user.name });
+        },
+      },
     },
   },
   onAPIError: {
