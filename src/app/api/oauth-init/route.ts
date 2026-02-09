@@ -3,21 +3,10 @@ import { addCorsHeaders } from "@/lib/cors";
 import { auth } from "@/lib/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 
-// Use the same handler as the auth route
 const authHandler = toNextJsHandler(auth);
 
-/**
- * Proxies form POST to /api/auth/sign-in/social, then returns 302 + forwards
- * Set-Cookie so the OAuth state is stored in the user's browser. This fixes
- * state_mismatch when the client app runs on a different origin (e.g. localhost)
- * than the auth service (e.g. Railway).
- * 
- * Instead of making an HTTP fetch, we call the auth handler directly since
- * we're on the same server.
- */
-// Get the auth service base URL - MUST use environment variable in production
+
 function getAuthServiceOrigin(): string {
-  // Priority: BETTER_AUTH_BASE_URL > AUTH_SERVICE_URL > Railway env vars > request URL
   let baseURL = process.env.BETTER_AUTH_BASE_URL || 
                 process.env.AUTH_SERVICE_URL || 
                 "";
@@ -47,10 +36,8 @@ function getAuthServiceOrigin(): string {
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
   
-  // Get the auth service origin - MUST use environment variable
   let baseOrigin = getAuthServiceOrigin();
   
-  // If still no baseOrigin, try to get from request (but log warning)
   if (!baseOrigin) {
     try {
       const reqUrl = new URL(req.url);
@@ -88,8 +75,7 @@ export async function POST(req: NextRequest) {
     const callbackURL = body.callbackURL || "/";
     const errorCallbackURL = body.errorCallbackURL;
 
-    // Create a new request to the auth endpoint
-    // Include Origin header - Better-auth requires it for security
+
     const authUrl = new URL("/api/auth/sign-in/social", baseOrigin);
     const authRequest = new NextRequest(authUrl, {
       method: "POST",
@@ -106,10 +92,8 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    // Call the auth handler directly instead of making HTTP fetch
     const authResponse = await authHandler.POST(authRequest);
     
-    // Check if response is valid
     if (!authResponse) {
       throw new Error("Auth handler returned null response");
     }
@@ -121,12 +105,8 @@ export async function POST(req: NextRequest) {
       location: authResponse.headers.get("Location"),
     });
 
-    // Better-auth might return either:
-    // 1. A redirect response (302) with Location header
-    // 2. A JSON response with { url: "...", error: "..." }
     let redirectUrl: string | null = null;
     
-    // Check if it's a redirect response
     if (authResponse.status >= 300 && authResponse.status < 400) {
       redirectUrl = authResponse.headers.get("Location");
       if (redirectUrl) {
@@ -135,11 +115,9 @@ export async function POST(req: NextRequest) {
         console.warn("Redirect response but no Location header");
       }
     } else if (authResponse.status === 200) {
-      // Try to parse as JSON
       try {
         const contentType = authResponse.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
-          // Clone response before reading body (in case we need to read it again)
           const clonedResponse = authResponse.clone();
           const data = await clonedResponse.json() as { url?: string; error?: string };
           console.log("Auth handler returned JSON:", data);

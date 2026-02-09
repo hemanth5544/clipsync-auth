@@ -1,7 +1,4 @@
-/**
- * Explicit route for /api/auth/sign-out so OPTIONS preflight is handled.
- * Next.js catch-all [...all] does not receive OPTIONS; this route does.
- */
+
 import { auth } from "@/lib/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 import { NextRequest, NextResponse } from "next/server";
