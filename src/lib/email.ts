@@ -14,11 +14,7 @@ export type WelcomeEmailUser = {
   name?: string | null;
 };
 
-/**
- * Sends a welcome email after successful sign-up.
- * Call this from Better-Auth databaseHooks user.create.after.
- * No-op if RESEND_API_KEY is not set (e.g. local dev).
- */
+
 export async function sendWelcomeEmail(user: WelcomeEmailUser): Promise<void> {
   const resend = getResend();
   if (!resend) {

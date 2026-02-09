@@ -162,15 +162,16 @@ export const auth = betterAuth({
       scope: ["read:user", "user:email"],
     },
   },
-  databaseHooks: {
-    user: {
-      create: {
-        after: async (user) => {
-          await sendWelcomeEmail({ email: user.email, name: user.name });
-        },
-      },
-    },
-  },
+  //DNS: should be hadnled at resend
+  // databaseHooks: {
+  //   user: {
+  //     create: {
+  //       after: async (user) => {
+  //         await sendWelcomeEmail({ email: user.email, name: user.name });
+  //       },
+  //     },
+  //   },
+  // },
   onAPIError: {
     errorURL: (error: any, request: any) => {
       try {
