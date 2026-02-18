@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm prisma:generate && PORT=${PORT:-3001} next dev -H 0.0.0.0 -p ${PORT:-3001}",
+
     "dev:local": "pnpm prisma:generate && PORT=3001 next dev",
     "start": "pnpm prisma:generate && PORT=${PORT:-3001} next dev -H 0.0.0.0 -p ${PORT:-3001}",
     "prisma:generate": "node scripts/prisma-with-env.js prisma generate --schema=./prisma/schema.prisma",
